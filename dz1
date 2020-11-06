@@ -1,0 +1,117 @@
+
+
+-- Create an external data source with CREDENTIAL option.
+CREATE EXTERNAL DATA SOURCE uaprofnewblob3
+WITH
+  ( LOCATION = 'wasbs://cont01@bigdatastr1.blob.core.windows.net',
+    CREDENTIAL = newuaprofcred ,
+    TYPE = HADOOP
+  ) ;
+
+CREATE EXTERNAL FILE FORMAT [uaprof_file_format] WITH 
+    (FORMAT_TYPE = DELIMITEDTEXT, 
+    FORMAT_OPTIONS 
+    (
+    FIELD_TERMINATOR = N',', 
+    STRING_DELIMITER = N'"', 
+    FIRST_ROW = 2, 
+    USE_TYPE_DEFAULT = True
+    )
+    )
+GO
+
+CREATE EXTERNAL TABLE uaprof_schema.taxi_ext
+(   
+    VendorID int NULL
+  ,tpep_pickup_datetime datetime NULL
+  ,tpep_dropoff_datetime datetime NULL
+  ,passenger_count int NULL
+  ,trip_distance real NULL
+  ,RatecodeID int NULL
+  ,store_and_fwd_flag char(1) NULL
+  ,PULocationID int NULL
+  ,DOLocationID int NULL
+  ,payment_type int NULL
+  ,fare_amount real NULL
+  ,extra real NULL
+  ,mta_tax real NULL
+  ,tip_amount real NULL
+  ,tolls_amount real NULL
+  ,improvement_surcharge real NULL
+  ,total_amount real NULL
+  ,congestion_surcharge real NULL
+)
+WITH
+(
+    LOCATION = '/yellow_tripdata_2020-01.csv',
+    DATA_SOURCE = uaprofnewblob3,
+    FILE_FORMAT = uaprof_file_format
+)
+GO
+
+
+
+CREATE TABLE uaprof_schema.fact_tripdata
+WITH (CLUSTERED COLUMNSTORE INDEX, DISTRIBUTION = HASH(tpep_dropoff_datetime))
+AS SELECT * FROM uaprof_schema.taxi_ext;
+
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE uaprof_schema.Vendor(
+    ID int NULL
+  ,Name varchar NULL
+)
+WITH
+(
+	DISTRIBUTION = HASH ( [ID] ),
+	CLUSTERED COLUMNSTORE INDEX
+)
+GO
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [uaprof_schema].[RateCodeID]
+(
+	[ID] [int] NOT NULL,
+	[NAME] [varchar](255) NOT NULL
+)
+WITH
+(
+	DISTRIBUTION = HASH ( [ID] ),
+	CLUSTERED INDEX
+	(
+		[ID] ASC
+	)
+)
+GO
+
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [uaprof_schema].[RateCodeID]
+(
+	[ID] [int] NOT NULL,
+	[NAME] [varchar](255) NOT NULL
+)
+WITH
+(
+	DISTRIBUTION = HASH ( [ID] ),
+	CLUSTERED INDEX
+	(
+		[ID] ASC
+	)
+)
+GO
+
+
+
+
+
